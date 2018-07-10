@@ -37,7 +37,7 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
 3. Lifecycle hook
 4. Export a class and import it elsewhere
 5. (Use Angular CLI to) Create a Hero class under “src/app”, and import it in HeroesComponent. Declare a Hero instance in HeroesComponent, display the instance’s properties in HeroesComponent’s HTML template. This doesn’t affect how HeroesComponent is used by its parent.
-6. <div>, <span>: no special meaning, just represents its children
+6. `<div>`, `<span>`: no special meaning, just represents its children
 7. Pipe operator |: Angular ships with built-in pipes, and you can create your own. A good way to form strings, currency, dates and other display data.
   ```html
   <div>Name: {{hero.name | uppercase}}</div>
@@ -66,7 +66,7 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
     ],
   })
   ```
-9. @NgModule decorator: app metadata live in this decorator. All components should be declared in one `NgModule`. When Angular CLI created `HeroesComponent`, it declared it in the `@NgModule` in `AppModule` (and also `AppComponent`).
+9. `@NgModule` decorator: app metadata live in this decorator. All components should be declared in one `NgModule`. When Angular CLI created `HeroesComponent`, it declared it in the `@NgModule` in `AppModule` (and also `AppComponent`).
 10. Show a list of items: `<ul>` unordered list, `<ol>` ordered list, `<li>` list item as a child of the outer `<ul>` or `<ol>`.
   Use `*ngFor` to loop over an array:
   ```html
@@ -102,6 +102,7 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
   <app-hero-detail [hero]="selectedHero"></app-hero-detail> 
   ```
   Angular's property binding: One-way binding from the `selectedHero` property of `HeroesComponent` to the `hero` property of `HeroDetailComponent`.
+
 13. service: a way to share information among classes that don't know each other.
   ```typescript
   import { Injectable } from '@angular/core';
@@ -127,7 +128,9 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
   ```
 
   The parameter simultaneously defines a private `heroService` property and identifies it as a `HeroService` injection site. When Angular creates a `HeroesComponent`, the **Dependency Injection system** sets the `heroService` parameter to a singleton instance of `HeroService`.
+
 14. The best location to make a remote call to a server is in `ngOnInit()`, instead of `constructor()` which is suited for simple initialization.
+
 15. Asynchronous call and `Observable`: 
   In `HeroService` temporarily use `RxJS`'s `of()` method to return an `Observable<>` object:
   ```typescript
@@ -183,6 +186,7 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
   ```
 
   In `AppComponent`, replace `<app-heroes>` with `<router-outlet>`. Remove `<app-heroes>` because heroes will only be displayed when navigated there. `<router-outlet>` tells the router where to display the routed views. **(?)** The `RouterOutlet` is one of the router directives that became available to the `AppComponent` because `AppModule` imports `AppRoutingModule` which exported `RouterModule`.
+
 21. `<nav>`: represents a part of a page that links to other pages or other part of the page. `<a>`: a hyperlink (hyper anchor) represented by its label. In this case we have the `routerLink` attribute. **(?)** The `routerLink` is the selector for the `RouterLink` directive that turns user clicks into router navigations. It's another of the public directives in the `RouterModule`.
 
   ```html
@@ -204,6 +208,7 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
   ```
 
   Use Angular interpolating binding for `routerLink`.
+
 23. In `HeroDetailComponent`:
   * get the id of the selected hero from the router
   * get the information from `HeroService` of the selected hero and display it
@@ -243,4 +248,5 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
     this.location.back();
   }
   ```
-24.
+  
+24. HTTP service.... I'm too lazy to write this. See the Angular's [tutorial page](https://angular.io/tutorial/toh-pt6#enable-http-services)
