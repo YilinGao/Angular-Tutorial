@@ -250,3 +250,12 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
   ```
   
 24. HTTP service.... I'm too lazy to write this. See the Angular's [tutorial page](https://angular.io/tutorial/toh-pt6#enable-http-services)
+
+25. Tell the meaning of them:
+
+ *`*ngFor`
+ * `{{hero.name}}`
+ * `(click)`
+ * `[hero]`
+ * `<app-hero-detail>`
+ 
