@@ -127,7 +127,7 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
   constructor(private heroService: HeroService) { }
   ```
 
-  The parameter simultaneously defines a private `heroService` property and identifies it as a `HeroService` injection site. When Angular creates a `HeroesComponent`, the **Dependency Injection system** sets the `heroService` parameter to a singleton instance of `HeroService`.
+  The parameter simultaneously defines a private `heroService` property and identifies it as a `HeroService` injection site. When Angular creates a `HeroesComponent`, the **Dependency Injection system** sets the `heroService` parameter to a singleton instance of `HeroService`. This is a TypeScript [parameter property](http://www.typescriptlang.org/docs/handbook/classes.html#parameter-properties).
 
 14. The best location to make a remote call to a server is in `ngOnInit()`, instead of `constructor()` which is suited for simple initialization.
 
