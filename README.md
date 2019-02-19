@@ -404,3 +404,5 @@ export class Routable1Component implements OnInit {
 ```
 
 5. `NavigationEnd` event happens when navigation ends successfully. `NavigationCancel` event happens when the navigation is canceled, and it is because a router guard returns false during navigation. `NavigationError` event happens when the navigation fails due to unexpected errors.
+
+6.
