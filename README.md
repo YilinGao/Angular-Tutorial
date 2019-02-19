@@ -358,51 +358,104 @@ per https://angular.io/guide/router
 
 1. When defining routes in the RouterModule, you can pass a `data` property to a route.
 
-```typescript
-const routes : Route = [
-  {
-    path: 'heroes',
-    component: HeroListComponent,
-    data: { title: 'Heroes List' }
-  },
-]
-```
+    The `data` property is a place to store arbitrary data associated with this specific route. The data property is accessible within each activated route. Use it to store items such as **page titles, breadcrumb text, and other read-only, static data**. You'll use the resolve guard to retrieve dynamic data later in the guide.
 
-The `data` property is a place to store arbitrary data associated with this specific route. The data property is accessible within each activated route. Use it to store items such as **page titles, breadcrumb text, and other read-only, static data**. You'll use the resolve guard to retrieve dynamic data later in the guide.
+    Maybe I can change how our UI implements its breadcrumb? Dunno, need to look into this more... at least a new idea. It doesn't seem like a high priority though, the current way works fine.
 
-`//TODO` Maybe I can change how our UI implements its breadcrumb? Dunno, need to look into this more... at least a new idea. It doesn't seem like a high priority though, the current way works fine.
+    ```typescript
+    const routes : Route = [
+      {
+        path: 'heroes',
+        component: HeroListComponent,
+        data: { title: 'Heroes List' }
+      },
+    ]
+    ```
 
-2. The `RouterOutlet` is a directive from the router library that is used like a **component**. It acts as a placeholder that marks the spot in the template where the router should display the components for that outlet. Its template selector is `<router-outlet></router-outlet>`. When the router detects the URL goes to some route defined in its RouterModule, it places its corresponding component as a sibling component to the `RouterOutlet component` (instead of replacing it).
+2. Now I've seen two different ways of defining routes:
 
-3. After the end of each **successful navigation lifecycle**, the router builds a tree of `ActivatedRoute` objects that make up the current **state** of the router. The tree of ActivatedRoute is called [RouterState](https://angular.io/api/router/RouterState). You can access the current RouterState from anywhere in the application using the [Router](https://angular.io/api/router/Router) service and the routerState property. Each ActivatedRouter provided methods to traverse up and down the route state tree to get information from parent, child, and sibling routes.
+* Way 1: no component if the route still has children, only including component if this is a leaf route (our project). So **each leaf component defines a complete page**.
 
-This means to me, only after a navigation event succeeds (finishes, and finishes without errors), the new state will be recorded into the router.
+  ```typescript
+  const routes: Routes = [
+    // Services
+    {
+      path: 'services',
+      children: [
+        {
+          path: '',
+          component: ServiceList,
+        },
+      ]
+    },
+  ```
 
-4. When setting `enableTracking` to `true` in the RouterModule, router events are logged into the console. `Router.events` provides events as observables. To filter on certain navigation events, use RxJS's `filter()` operator:
+* Way 2: including component in non-leaf components as well. **All components on a route path construct a page from top to down.**
 
-```typescript
-@Component({
-  selector: 'app-routable',
-  templateUrl: './routable.component.html',
-  styleUrls: ['./routable.component.css']
-})
-export class Routable1Component implements OnInit {
+  ```typescript
+  const crisisCenterRoutes: Routes = [
+    {
+      path: '',
+      // The first part of the page showing without any condition
+      component: CrisisCenterComponent,
+      children: [
+        {
+          path: '',
+          // The second part of the page showing without any condition
+          component: CrisisListComponent,
+          children: [
+            {
+              // The third part of the page showing if a valid id provided
+              path: ':id',
+              component: CrisisDetailComponent,
+              canDeactivate: [CanDeactivateGuard],
+              resolve: {
+                crisis: CrisisDetailResolverService
+              }
+            },
+            {
+              // The third part of the page showing if no id provided
+              path: '',
+              component: CrisisCenterHomeComponent
+            }
+          ]
+        }
+      ]
+    }
+  ];
+  ```
 
-  navStart: Observable<NavigationStart>;
+3. The `RouterOutlet` is a directive from the router library that is used like a **component**. It acts as a placeholder that marks the spot in the template where the router should display the components for that outlet. Its template selector is `<router-outlet></router-outlet>`. When the router detects the URL goes to some route defined in its RouterModule, it places its corresponding component as a sibling component to the `RouterOutlet component` (instead of replacing it).
 
-  constructor(private router: Router) {
-    // Create a new Observable that publishes only the NavigationStart event
-    this.navStart = router.events.pipe(
-      filter(evt => evt instanceof NavigationStart)
-    ) as Observable<NavigationStart>;
-  }
+4. After the end of each **successful navigation lifecycle**, the router builds a tree of `ActivatedRoute` objects that make up the current **state** of the router. The tree of ActivatedRoute is called [RouterState](https://angular.io/api/router/RouterState). You can access the current RouterState from anywhere in the application using the [Router](https://angular.io/api/router/Router) service and the routerState property. Each ActivatedRouter provided methods to traverse up and down the route state tree to get information from parent, child, and sibling routes.
 
-  ngOnInit() {
-    this.navStart.subscribe(evt => console.log('Navigation Started!'));
-  }
-}
-```
+    This means to me, only after a navigation event succeeds (finishes, and finishes without errors), the new state will be recorded into the router.
 
-5. `NavigationEnd` event happens when navigation ends successfully. `NavigationCancel` event happens when the navigation is canceled, and it is because a router guard returns false during navigation. `NavigationError` event happens when the navigation fails due to unexpected errors.
+5. When setting `enableTracking` to `true` in the RouterModule, router events are logged into the console. `Router.events` provides events as observables. To filter on certain navigation events, use RxJS's `filter()` operator:
 
-6.
+    ```typescript
+    @Component({
+      selector: 'app-routable',
+      templateUrl: './routable.component.html',
+      styleUrls: ['./routable.component.css']
+    })
+    export class Routable1Component implements OnInit {
+
+      navStart: Observable<NavigationStart>;
+
+      constructor(private router: Router) {
+        // Create a new Observable that publishes only the NavigationStart event
+        this.navStart = router.events.pipe(
+          filter(evt => evt instanceof NavigationStart)
+        ) as Observable<NavigationStart>;
+      }
+
+      ngOnInit() {
+        this.navStart.subscribe(evt => console.log('Navigation Started!'));
+      }
+    }
+    ```
+
+6. `NavigationEnd` event happens when navigation ends successfully. `NavigationCancel` event happens when the navigation is canceled, and it is because a router guard returns false during navigation. `NavigationError` event happens when the navigation fails due to unexpected errors.
+
+7. router guards TODO
