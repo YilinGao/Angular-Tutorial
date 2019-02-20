@@ -360,7 +360,7 @@ per https://angular.io/guide/router
 
 1. When defining routes in the RouterModule, you can pass a `data` property to a route.
 
-    The `data` property is a place to store arbitrary data associated with this specific route. The data property is accessible within each activated route. Use it to store items such as **page titles, breadcrumb text, and other read-only, static data**. You'll use the resolve guard to retrieve dynamic data later in the guide.
+    The `data` property is a place to store arbitrary data associated with this specific route. The data property is accessible within each activated route. Use it to store items such as **page titles, breadcrumb text, and other read-only, static data**. You'll use the resolve guard (see the part for route guards) to retrieve dynamic data later in the guide.
 
     Maybe I can change how our UI implements its breadcrumb? Dunno, need to look into this more... at least a new idea. It doesn't seem like a high priority though, the current way works fine.
 
@@ -376,7 +376,7 @@ per https://angular.io/guide/router
 
 2. Now I've seen two different ways of defining routes:
 
-* Way 1: no component if the path still has children, only including component if this is a leaf path (our project). So **each leaf path defines a complete page**.
+* Way 1: no component if the path still has children, only including component if this is a leaf path (our project). So **each leaf path defines a complete page**. **Component-less route**.
 
   ```typescript
   const routes: Routes = [
@@ -391,6 +391,27 @@ per https://angular.io/guide/router
       ]
     },
   ```
+
+  ```typescript
+  const adminRoutes: Routes = [
+    {
+      path: 'admin',
+      component: AdminComponent,
+      children: [
+        {
+          path: '',
+          children: [
+            { path: 'crises', component: ManageCrisesComponent },
+            { path: 'heroes', component: ManageHeroesComponent },
+            { path: '', component: AdminDashboardComponent }
+          ]
+        }
+      ]
+    }
+  ];
+  ```
+
+  A component-less route makes it easier to guard child routes using `CanActivateChild` (see the part of route guards).
 
 * Way 2: including component in non-leaf paths as well. **All components on a route path construct a page from top to down.**
 
@@ -429,7 +450,7 @@ per https://angular.io/guide/router
 
 3. The `RouterOutlet` is a directive from the router library that is used like a **component**. It acts as a placeholder that marks the spot in the template where the router should display the components for that outlet. Its template selector is `<router-outlet></router-outlet>`. When the router detects the URL goes to some route defined in its RouterModule, it places its corresponding component as a sibling component to the `RouterOutlet component` (instead of replacing it).
 
-4. After the end of each **successful navigation lifecycle**, the router builds a tree of `ActivatedRoute` objects that make up the current **state** of the router. The tree of ActivatedRoute is called [RouterState](https://angular.io/api/router/RouterState). You can access the current RouterState from anywhere in the application using the [Router](https://angular.io/api/router/Router) service and the routerState property. Each ActivatedRouter provided methods to traverse up and down the route state tree to get information from parent, child, and sibling routes.
+4. After the end of each **successful navigation lifecycle**, the router builds a tree of [`ActivatedRoute`](https://angular.io/api/router/ActivatedRoute) objects that make up the current **state** of the router. The tree of ActivatedRoute is called [`RouterState`](https://angular.io/api/router/RouterState) (an interface that extends `Tree` and contains another `RouterStateSnapshot` field called `snapshot`). You can access the current RouterState from anywhere in the application using the [`Router`](https://angular.io/api/router/Router) service and its `routerState` property (`router.routerState.snapshot.root` -> `root: ActivatedRouteSnapshot`). Each `ActivatedRouter` provides methods to traverse up and down the route state tree to get information from parent, child, and sibling routes, and properties like `snapshot: ActivatedRouterSnapshot`, `paramMap`, and `queryParamMap`.
 
     This means to me, only after a navigation event succeeds (finishes, and finishes without errors), the new state will be recorded into the router.
 
@@ -460,4 +481,164 @@ per https://angular.io/guide/router
 
 6. `NavigationEnd` event happens when navigation ends successfully. `NavigationCancel` event happens when the navigation is canceled, and it is because a router guard returns false during navigation. `NavigationError` event happens when the navigation fails due to unexpected errors.
 
-7. router guards TODO
+7. Route guard `CanActive`, used for authentication/authorization.
+
+  * Define an authentication guard that implements `CanActivate`.
+
+    [`CanActivate`](https://angular.io/api/router/CanActivate) is an interface that decides if a route can be activated. If all guards return true, navigation will continue. If any guard returns false, navigation will be cancelled. If any guard returns a UrlTree, current navigation will be cancelled and a new navigation will be kicked off to the UrlTree returned from the guard.
+
+    The interface has a method `canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot)` that returns `Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree`. The `ActivatedRouteSnapshot` contains the **future** route (ActivatedRoute) that will be activated and the `RouterStateSnapshot` contains the **future** RouterState of the application, should you pass through the guard check. (So these two are the snapshot values of `ActivatedRoute` and `RouterState`. Remember that `ActivatedRoute` represents a node in the URL tree, and `RouterState` is the tree of `ActivatedRoute`s)
+
+    ```typescript
+    // auth_guard.ts
+    import { Injectable } from '@angular/core';
+    import { CanActivate, ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
+
+    @Injectable({
+      providedIn: 'root',
+    })
+    export class AuthGuard implements CanActivate {
+      constructor(private readonly router: Router) {}
+
+      canActivate(
+        next: ActivatedRouteSnapshot,
+        state: RouterStateSnapshot): boolean {
+
+        // If pass the authorization, return true, and don't need to do anything
+        // else. The router is able to navigate to the next route.
+
+        // If not pass the authorization, store the target future URL somewhere
+        // else (this.state.url in another service that the login component can
+        // use), navigate to another page (this.router.navigate() to the login
+        // component), and return false. And actually the second navigation
+        // automatically cancels the current one, so it's just returning false
+        // to be clear.
+      }
+    }
+    ```
+
+  * Use the guard in the routing module with a `canActivate` guard property.
+
+    ```typescript
+    import { AuthGuard } from '../auth/auth.guard';
+
+    const adminRoutes: Routes = [
+      {
+        path: 'admin',
+        component: AdminComponent,
+        canActivate: [AuthGuard],
+        children: [
+          {
+            path: '',
+            children: [
+              { path: 'crises', component: ManageCrisesComponent },
+              { path: 'heroes', component: ManageHeroesComponent },
+              { path: '', component: AdminDashboardComponent }
+            ],
+          }
+        ]
+      }
+    ];  
+    ```
+
+8. Route guard `CanActivateChild`. The `CanActivateChild` guard is similar to the `CanActivate` guard. The key difference is that it runs before any child route is activated.
+
+  * Make the authorization guard also implements `CanActivateChild`.
+
+    The `canActivateChild()` method takes same parameters as `canActivate()`. And in this case, their logic will be same: both checking if the current user is logged in. So they can actually reuse a same helper method.
+
+    ```typescript
+    // auth_guard.ts
+    import { Injectable } from '@angular/core';
+    import { CanActivate, CanActivateChild, ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
+
+    @Injectable({
+      providedIn: 'root',
+    })
+    export class AuthGuard implements CanActivate, CanActivateChild {
+      constructor(private readonly router: Router) {}
+
+      canActivate(
+        next: ActivatedRouteSnapshot,
+        state: RouterStateSnapshot): boolean {
+        return this.activate(next, state);  
+      }
+
+      canActivateChild(
+        next: ActivatedRouteSnapshot,
+        state: RouterStateSnapshot): boolean {
+        return this.activate(next, state);
+      }
+
+      activate(
+        next: ActivatedRouteSnapshot,
+        state: RouterStateSnapshot): boolean {
+
+        // If pass the authorization, return true, and don't need to do anything
+        // else. The router is able to navigate to the next route.
+
+        // If not pass the authorization, store the target future URL somewhere
+        // else (this.state.url in another service that the login component can
+        // use), navigate to another page (this.router.navigate() to the login
+        // component), and return false. And actually the second navigation
+        // automatically cancels the current one, so it's just returning false
+        // to be clear.
+      }
+    }
+    ```
+
+  * Use the auth guard in the routing module with a `canActivateChild` property.
+
+    ```typescript
+    const adminRoutes: Routes = [
+      {
+        path: 'admin',
+        component: AdminComponent,
+        canActivate: [AuthGuard],
+        children: [
+          {
+            path: '',
+            canActivateChild: [AuthGuard],
+            children: [
+              { path: 'crises', component: ManageCrisesComponent },
+              { path: 'heroes', component: ManageHeroesComponent },
+              { path: '', component: AdminDashboardComponent }
+            ]
+          }
+        ]
+      }
+    ];
+    ```
+
+    With component-full route, you'll need to do the following, and you don't need to make `AuthGuard` implements `CanActivateChild`:
+
+    ```typescript
+    const adminRoutes: Routes = [
+      {
+        path: 'admin',
+        component: AdminComponent,
+        canActivate: [AuthGuard],
+        children: [
+          {
+            {
+              path: 'crises',
+              component: ManageCrisesComponent,
+              canActivate: [AuthGuard],
+            },
+            {
+              path: 'heroes',
+              component: ManageHeroesComponent,
+              canActivate: [AuthGuard],
+            },
+            {
+              path: '',
+              component: AdminDashboardComponent,
+              canActivate: [AuthGuard],
+            }
+          }
+        ]
+      }
+    ];
+    ```
+
+9. Route guard `CanDeactivate`. 
