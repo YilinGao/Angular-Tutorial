@@ -481,7 +481,7 @@ per https://angular.io/guide/router
 
 6. `NavigationEnd` event happens when navigation ends successfully. `NavigationCancel` event happens when the navigation is canceled, and it is because a router guard returns false during navigation. `NavigationError` event happens when the navigation fails due to unexpected errors.
 
-7. Route guard `CanActive`, used for authentication/authorization.
+7. Route guard `CanActive`, used for authentication.
 
   * Define an authentication guard that implements `CanActivate`.
 
@@ -504,10 +504,10 @@ per https://angular.io/guide/router
         next: ActivatedRouteSnapshot,
         state: RouterStateSnapshot): boolean {
 
-        // If pass the authorization, return true, and don't need to do anything
+        // If pass the authentication, return true, and don't need to do anything
         // else. The router is able to navigate to the next route.
 
-        // If not pass the authorization, store the target future URL somewhere
+        // If not pass the authentication, store the target future URL somewhere
         // else (this.state.url in another service that the login component can
         // use), navigate to another page (this.router.navigate() to the login
         // component), and return false. And actually the second navigation
@@ -543,7 +543,7 @@ per https://angular.io/guide/router
 
 8. Route guard `CanActivateChild`. The `CanActivateChild` guard is similar to the `CanActivate` guard. The key difference is that it runs before any child route is activated.
 
-  * Make the authorization guard also implements `CanActivateChild`.
+  * Make the authentication guard also implements `CanActivateChild`.
 
     The `canActivateChild()` method takes same parameters as `canActivate()`. And in this case, their logic will be same: both checking if the current user is logged in. So they can actually reuse a same helper method.
 
@@ -574,10 +574,10 @@ per https://angular.io/guide/router
         next: ActivatedRouteSnapshot,
         state: RouterStateSnapshot): boolean {
 
-        // If pass the authorization, return true, and don't need to do anything
+        // If pass the authentication, return true, and don't need to do anything
         // else. The router is able to navigate to the next route.
 
-        // If not pass the authorization, store the target future URL somewhere
+        // If not pass the authentication, store the target future URL somewhere
         // else (this.state.url in another service that the login component can
         // use), navigate to another page (this.router.navigate() to the login
         // component), and return false. And actually the second navigation
@@ -641,4 +641,45 @@ per https://angular.io/guide/router
     ];
     ```
 
-9. Route guard `CanDeactivate`. 
+9. Route guard `CanDeactivate`. Didn't get what it is doing......
+
+10. [Resolver: pre-fetching data](https://angular.io/guide/router#resolve-pre-fetching-component-data) before activating the route. (It seems more complicated than we can afford. Our current Obsevables returned from RPC calls work in a more intuitive way. So not going to write down everything, just put the link here.)
+
+11. Route guard `CanLoad`, used for lazy loading and authorization.
+
+    With the use of `CanActivate` guard, users who are not logged in are not navigated to the admin components, but the router is still loading the AdminModule even if the user can't visit any of its components. Ideally, you'd only load the AdminModule if the user is logged in.
+
+  * Make `AuthGuard` implement `CanLoad` as well.
+
+    ```typescript
+    // auth_guard.ts
+    canLoad(route: Route): boolean {
+      let url = `/${route.path}`;
+
+      return this.checkLogin(url);
+    }
+    ```
+
+  * Use the guard in AppRoutingModule.
+
+    ```typescript
+    const appRoutes: Routes = [
+      {
+        path: 'compose',
+        component: ComposeMessageComponent,
+        outlet: 'popup'
+      },
+      {
+        path: 'admin',
+        loadChildren: './admin/admin.module#AdminModule',
+        canLoad: [AuthGuard]
+      },
+      {
+        path: 'crisis-center',
+        loadChildren: './crisis-center/crisis-center.module#CrisisCenterModule',
+        data: { preload: true }
+      },
+      { path: '',   redirectTo: '/superheroes', pathMatch: 'full' },
+      { path: '**', component: PageNotFoundComponent }
+    ];
+    ```
